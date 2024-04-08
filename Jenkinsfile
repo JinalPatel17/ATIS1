@@ -1,39 +1,34 @@
 pipeline {
-    agent { label "devops-server"}
+    agent any 
     
-    stages {
-        
-        stage("code"){
-            steps{
-                git url: "https://github.com/JinalPatel17/node-cicd.git", branch: "main"
-                echo 'Git clone is compelete'
+    stages{
+        stage("Clone Code"){
+            steps {
+                echo "Cloning the code"
+                git url:"", branch: "main"
             }
         }
-        stage("build and test"){
-            steps{
-                sh "docker build -t node-app-test-new ."
-                echo 'code built is done'
+        stage("Build"){
+            steps {
+                echo "Building the image"
+                sh "docker build -t my-note-app ."
             }
         }
-        stage("scan image"){
-            steps{
-                echo 'scanning images is done'
-            }
-        }
-        stage("push"){
-            steps{
+        stage("Push to Docker Hub"){
+            steps {
+                echo "Pushing the image to docker hub"
                 withCredentials([usernamePassword(credentialsId:"dockerHub",passwordVariable:"dockerHubPass",usernameVariable:"dockerHubUser")]){
+                sh "docker tag my-note-app ${env.dockerHubUser}/my-note-app:latest"
                 sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                sh "docker tag node-app-test-new:latest ${env.dockerHubUser}/node-app-test-new:latest"
-                sh "docker push ${env.dockerHubUser}/node-app-test-new:latest"
-                echo 'image push is done'
+                sh "docker push ${env.dockerHubUser}/my-note-app:latest"
                 }
             }
         }
-        stage("deploy"){
-            steps{
+        stage("Deploy"){
+            steps {
+                echo "Deploying the container"
                 sh "docker-compose down && docker-compose up -d"
-                echo 'deployment successful'
+                
             }
         }
     }
